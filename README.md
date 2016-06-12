@@ -1,3 +1,3 @@
-# My Awesome Book
+# iOS学习笔记
 
-This file file serves as your book's preface, a great place to describe your book's content and ideas.
+做iOS开发已经有一段时间了，但是有些东西学了就忘了，写了也会忘，深刻记录一下自己的学习历程，记录自己当初是如何学习的。
