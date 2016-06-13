@@ -40,7 +40,7 @@
     [self.navigationController.navigationBar setShadowImage:[[UIImage alloc] init]];
     
     UILabel *titleLabel = [[UILabel alloc] init];
-    titleLabel.text = @"我是熊欣";
+    titleLabel.text = @"要素吃屎";
     
     [titleLabel setTextColor:[UIColor colorWithWhite:1 alpha:0]];
     [titleLabel sizeToFit];
