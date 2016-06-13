@@ -54,7 +54,59 @@
  
 > self.contentTable.contentInset = UIEdgeInsetsMake(headViewHeight + btnViewHeight, 0, 0, 0);
 
-**注意点：当调用``contentInset``方法的时候，会自动调用``-(void)scrollViewDidScroll:(UIScrollView *)scrollView`这个方法。`**
+2.这时候发现拖动只有tablview的表格在变化，顶部视图没有变化，这时候就需要监听滚动的代理方法，当滚动时候，改变顶部视图的约束，最完美的做法是改变顶部图片视图的高度，而顶部视图高度：原始高度-向上偏移的高度，而向上偏移的高度= 移动后的表格的y - 初始的表格的y
 
-2.这时候发现拖动只有tablview的表格在变化，顶部视图没有变化，这时候就需要监听滚动的代理方法，当滚动时候，改变顶部视图的约束，最完美的做法是改变顶部图片视图的高度：
+>   // ----移动的高度=移动后的y-最初的y
+    CGFloat scrollHeight = scrollView.contentOffset.y - self.originOffsetY;
+    
+**初始的表格的y不能直接通过self.contentTable.contentOffset.y获得**
+
+>     // ----tableView的偏移量是tablview内容与可视范围的差值，没有设置contentInset就没有偏移量
+//        self.originOffsetY = self.contentTable.contentOffset.y;
+    self.originOffsetY = - (XHheadViewHeight + XHbtnViewHeight);
+
+**注意点：当调用``contentInset``方法的时候，会自动调用``-(void)scrollViewDidScroll:(UIScrollView *)scrollView``这个方法。而设置``contentInset``后``contentOffset``也会发生变化，因为本质就是``tablview内容与可视范围的差值``,因此这边要存储最开始的``contentOffset.y``要你之前偏移的高度的具体数值，而不能直接取``self.contentTable.contentOffset.y``,同时要记住用成员变量存开始的偏移值时候，要放在设置``contentInset``之前，否则会先调用滚动的代理方法**
+
+然后设置顶部视图的高度为拖动后的高度：
+
+>   CGFloat h = XHheadViewHeight - scrollHeight;
+
+通过观察发现，滑动时候有一个悬停效果，当距离为导航栏距离的时候，就停止缩小，然后显示出导航栏，这里要对h进行判断，如果h<导航栏高度的时候，就让它=导航栏的高度。
+
+> // ----添加悬停效果
+    if (h <= XHheadViewMinH) {
+        h = XHheadViewMinH;
+    }
+
+ 最后设置顶部视图的高度为h：
+ 
+>  self.topViewHeight.constant = h;
+
+然后设定导航栏字体和颜色渐变->在滚动的时候动态的改变``alpha``就可以实现了，**注意点：导航栏颜色不能改变，因此需要采用图片显示，这样可以写一个image的分类根据传过去的颜色生成image对象，来生成，但是系统导航栏当图片透明度为1，然后又覆盖系统官网导航栏图片情况下，会做处理，让导航栏变透明，因此当alpha大于1时候手动调整成0.99**
+
+> CGFloat alpha = scrollHeight / (XHheadViewHeight - XHheadViewMinH);
+   
+>  if (alpha >= 1) {
+        alpha = 0.99f;
+    }
+
+>  self.titleLabel.textColor = [UIColor colorWithWhite:0 alpha:alpha];
+
+>  // ----设定导航栏的渐变色，因为导航栏颜色没法设置透明度，只能从图片进行修改
+   UIImage *image = [UIImage imageWithColor:[UIColor colorWithWhite:1 alpha:alpha]];
+    
+>  [self.navigationController.navigationBar setBackgroundImage:image forBarMetrics:UIBarMetricsDefault];
+
+
+### 源码
+https://github.com/medivh-xiong/-.git
+
+
+
+
+
+
+
+
+
 
