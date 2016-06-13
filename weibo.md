@@ -54,5 +54,7 @@
  
 > self.contentTable.contentInset = UIEdgeInsetsMake(headViewHeight + btnViewHeight, 0, 0, 0);
 
+**注意点：当调用``contentInset``方法的时候，会自动调用``-(void)scrollViewDidScroll:(UIScrollView *)scrollView`这个方法。`**
+
 2.这时候发现拖动只有tablview的表格在变化，顶部视图没有变化，这时候就需要监听滚动的代理方法，当滚动时候，改变顶部视图的约束，最完美的做法是改变顶部图片视图的高度：
 
