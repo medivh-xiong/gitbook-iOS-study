@@ -24,11 +24,11 @@ Socket简化了程序员操作，知道对方的IP和端口号的情况下，就
 
 服务端：
 ``` obj-c
-  intport = 2000;
+  int port = 2000;
   
-  IPEndPointServerEP = new IPEndPoint(IPAddress.Any,port);
+  IPEndPoint ServerEP = new IPEndPoint(IPAddress.Any,port);
   
-  Socketserver = new Socket(AddressFamily.InterNetwork, SocketType.Stream,ProtocolType.Tcp);
+  Socket server = new Socket(AddressFamily.InterNetwork, SocketType.Stream,ProtocolType.Tcp);
   
   server.Bind(ServerEP);
   
@@ -36,13 +36,13 @@ Socket简化了程序员操作，知道对方的IP和端口号的情况下，就
 ```
 客户端：
 ``` obj-c
-  intport = 2000;
+  int port = 2000;
   
-  IPAddressserverip = IPAddress.Parse("192.168.1.53");
+  IPAddress serverip = IPAddress.Parse("192.168.1.53");
   
-  IPEndPointEP = new IPEndPoint(server,port);
+  IPEndPoint EP = new IPEndPoint(server,port);
   
-  Socketserver = new Socket(AddressFamily.InterNetwork, SocketType.Stream,ProtocolType.Tcp);
+  Socket server = new Socket(AddressFamily.InterNetwork, SocketType.Stream,ProtocolType.Tcp);
   
   server.Bind(EP);
  
@@ -50,7 +50,7 @@ Socket简化了程序员操作，知道对方的IP和端口号的情况下，就
 当服务端收到客户端连接后，需要新建一个Socket来处理远端消息
 ``` obj-c
   //应该放在服务端：
-  Socketclient = server.Accept();
+  Socket client = server.Accept();
 ```
 
 ##二、各协议的区别
@@ -80,3 +80,21 @@ Socket本身就是对TCP的封装，就要先明白TCP连接：
 只有进行完三次握手后，才能正式传输数据，理想状态下只要建立起连接，在通信双方主动关闭连接之前，TCP连接将会一直保持下去。断开连接时服务器和客户端均可以主动发起断开TCP连接的请求，断开过程需要经过“四次握手”，在”三次握手“基础上在加一步确认。
 
 2.**HTTP连接**
+
+HTPP协议即超文本传送协议，是建立在TCP协议之上的一种。客户端每次发送的请求都要服务端回送响应，请求结束后，会自动释放连接。
+
+3.**Socekt连接**
+
+概念：Socket是通信的基石，是支持TCP/IP协议的基本操作单元，包含5种信息：连接使用的协议，本机主机IP地址，本地进程的端口号，远程主机IP地址，远程进程的协议端口。
+
+应用层通过传输层进行数据传输时候，可能会遇到同一个TCP协议端口传输好几种数据，可以通过socket来区分不同应用程序或者网络连接。
+
+建立Socket连接的步骤
+1. 至少需要1对，一个作用于客户端，一个在服务端；
+2. 连接分为三个步骤：服务器监听，客户端请求，连接确认；
+3. 服务器监听：并不对应具体的客户端socket，而是处于等待连接状态，实时监听网络状态，等待客户端连接；
+4. 客户端请求：客户端的套接字向服务端套接字发起连接请求，因此需要知道服务端的套接字的地址和端口号，而且需要描述他要连接的服务器的套接字；
+5. 连接确认：当服务端套接字监听到或者接收到客户端的套接字的连接请求，就响应客户端的套接字，建立一个新的连接，把服务端的套接字的描述发给客户端，一旦确认，双方就正式建立连接。而且服务端的套接字仍在监听状态，继续接受其他客户端的套接字。
+
+
+
