@@ -71,23 +71,32 @@ TCP/IP是传输层协议，主要解决数据如何在网络中传输；而HTTP�
 
 Socket本身就是对TCP的封装，就要先明白TCP连接：
 
-建立一次TCP连接需要进行”三次握手“：
+建立一次TCP连接需要进行"三次握手"：
 
-1. 客户端发送syn包到服务器，同时进入SYN_SEND状态，等待服务器确认；
-2. 服务器收到syn包，必须确认客户的SYN（发送ACK包确认）；同时发送一个SYN包，即SYN+ACK包，同时进入SYN_RECV状态；
-3. 客户端收到服务端的SYN+ACK包，向服务端发送确认包ACK，发送完成后，客户端和服务端都进入ESTABLISHED状态，完成三次握手；
 
 ![](tcp-三次握手.png)
 
 首先了解一下几个标志，SYN（synchronous），同步标志，ACK (Acknowledgement），即确认标志，seq应该是Sequence Number，序列号的意思，另外还有四次握手的fin，应该是final，表示结束标志。
 
 简单的用英语来表示就是：
-客户端：hi,how are you？
-服务端：fine，thank you,and you？
-客户端：i am fine too.
-然后开始通信。
 
-只有进行完三次握手后，才能正式传输数据，理想状态下只要建立起连接，在通信双方主动关闭连接之前，TCP连接将会一直保持下去。断开连接时服务器和客户端均可以主动发起断开TCP连接的请求，断开过程需要经过“四次握手”，在”三次握手“基础上在加一步确认。
+客户端：hi,how are you？
+
+服务端：fine，thank you,and you？
+
+客户端：i am fine too.
+
+1. 客户端发送一个TCP的SYN标志位置1的包指明客户打算连接的服务器的端口，以及初始序号X,保存在包头的序列号(Sequence Number)字段里。
+2. 服务器发回确认包(ACK)应答。即SYN标志位和ACK标志位均为1同时，将确认序号(Acknowledgement Number)设置为客户的序列号加1以，即X+1。
+3. 客户端再次发送确认包(ACK) SYN标志位为0，ACK标志位为1。并且把服务器发来ACK的序号字段+1，放在确定字段中发送给对方.并且在数据段放写序列号的+1。
+
+只有进行完三次握手后，才能正式传输数据，理想状态下只要建立起连接，在通信双方主动关闭连接之前，TCP连接将会一直保持下去。三次握手能够确保对面已经收到自己的同步序列号，这样就可以保证后续数据包的丢失可以被察觉，这也是TCP流式传输的基础。 
+
+断开TCP连接需要发送4个包，客户端和服务端都可以发起这个请求，在Socket编程中任何一方执行close（）操作就会产生"四次握手"：
+
+![](tcp-四次握手.png)
+**关闭为什么是4次，而连接是3次，是因为当服务端收到客户端的SYN连接请求报文后，可以直接发送SYN+ACK报文，ACK用来回应，SYN用来同步。但是当关闭连接的情况下，接收端收到FIN报文时候，很可能不会立即关闭，所以先发送一个ACK报文告诉发送端我收到了，只有等接收端报文全部发送完了，才能发送FIN报文。**
+
 
 2.**HTTP连接**
 
@@ -123,15 +132,45 @@ iOS提供了Socket网络编程接口CFSocket，tcp和udp的socket是有区别的
 
 > ![](udp_Socket.png)
 
+常用的Socket类型分为两种，流式Socket（SOCKET_STREAM）和数据报式（SOCKET_DGRAM）,流式针对于面向TCP连接的应用，而数据报式是一种无连接的Socket，对应于无连接的UDP服务应用。
 
+iOS官方给出的使用时CFSocket，它是基于BSD Socket进行抽象和封装，CFSocket 中包含了少数开销，它几乎可以提供 BSD sockets 所具有的一切功能，并且把 socket 集成进一个“运行循环”当中。CFSocket 并不仅仅限于基于流的 sockets (比如 TCP)，它可以处理任何类型的 socket。
 
-
-
-
-
+你可以利用 CFSocketCreate 功能从头开始创建一个 CFSocket 对象，或者利用 CFSocketCreateWithNative 函数从 BSD socket 创建。然后，需要利用函数 CFSocketCreateRunLoopSource 创建一个“运行循环”源，并利用函数CFRunLoopAddSource 把它加入一个“运行循环”。这样不论 CFSocket 对象是否接收到信息， CFSocket 回调函数都可以运行。
 
 ```obj-c
-  
+     CFSocketRef SocketRef = CFSocketCreate
+    (
+      //内存分配类型，一般为默认的Allocator
+     <#CFAllocatorRef allocator#>,
+      //协议族,一般为Ipv4:PF_INET,(Ipv6,PF_INET6)
+     <#SInt32 protocolFamily#>,
+     //套接字类型，TCP用流式，UDP用报文式
+     <#SInt32 socketType#>,
+     //套接字协议，如果之前用的是流式套接字类型：PPROTO_TCP，如果是报文式：IPPROTO_UDP
+     <#SInt32 protocol#>,
+     //回调事件触发类型 
+     <#CFOptionFlags callBackTypes#>,
+     //触发时候调用的方法
+     <#CFSocketCallBack callout#>,
+     //用户定义的数据指针， 可以为NULL
+     <#const CFSocketContext *context#>
+     );
+     
+具体的回调事件触发类型
+enum CFSocketCallBackType {
+   kCFSocketNoCallBack = 0,
+   kCFSocketReadCallBack = 1,
+   kCFSocketAcceptCallBack = 2,
+   kCFSocketDataCallBack = 3,
+   kCFSocketConnectCallBack = 4,
+   kCFSocketWriteCallBack = 8
+};
+typedef enum CFSocketCallBackType CFSocketCallBackType;
+     
+具体的触发调用的方法
+CFSocketCallBack
+
 
 ```
 
