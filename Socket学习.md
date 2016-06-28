@@ -138,6 +138,7 @@ iOS官方给出的使用时CFSocket，它是基于BSD Socket进行抽象和封�
 
 你可以利用 CFSocketCreate 功能从头开始创建一个 CFSocket 对象，或者利用 CFSocketCreateWithNative 函数从 BSD socket 创建。然后，需要利用函数 CFSocketCreateRunLoopSource 创建一个“运行循环”源，并利用函数CFRunLoopAddSource 把它加入一个“运行循环”。这样不论 CFSocket 对象是否接收到信息， CFSocket 回调函数都可以运行。
 
+1.创建CFSocketdui'xiang
 ```obj-c
      CFSocketRef SocketRef = CFSocketCreate
     (
@@ -153,7 +154,7 @@ iOS官方给出的使用时CFSocket，它是基于BSD Socket进行抽象和封�
      <#CFOptionFlags callBackTypes#>,
      //触发时候调用的方法
      <#CFSocketCallBack callout#>,
-     //用户定义的数据指针， 可以为NULL
+     //用户定义的数据指针，用于配置CFSocket对象的行为或者定义
      <#const CFSocketContext *context#>
      );
      
@@ -170,7 +171,7 @@ typedef enum CFSocketCallBackType CFSocketCallBackType;
      
 具体的触发调用的方法
 CFSocketCallBack
-
-
+当确定的某个活动类型发生在CFSocket对象上，就会触发回调；这里触发回调的类型就是上面的具体的类型
+官方的申明是：typedef void (*CFSocketCallBack) ( CFSocketRef s, CFSocketCallBackType callbackType, CFDataRef address, const void *data, void *info );也就是新建的这个方法要包含这些参数
 ```
 
