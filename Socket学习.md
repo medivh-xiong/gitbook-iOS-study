@@ -20,38 +20,7 @@ Socket简化了程序员操作，知道对方的IP和端口号的情况下，就
 
 * 客户端，服务端断开连接；
 
-3.**Socket双方如何建立连接**
 
-服务端：
-``` obj-c
-  int port = 2000;
-  
-  IPEndPoint ServerEP = new IPEndPoint(IPAddress.Any,port);
-  
-  Socket server = new Socket(AddressFamily.InterNetwork, SocketType.Stream,ProtocolType.Tcp);
-  
-  server.Bind(ServerEP);
-  
-  server.Listen(0);
-```
-客户端：
-``` obj-c
-  int port = 2000;
-  
-  IPAddress serverip = IPAddress.Parse("192.168.1.53");
-  
-  IPEndPoint EP = new IPEndPoint(server,port);
-  
-  Socket server = new Socket(AddressFamily.InterNetwork, SocketType.Stream,ProtocolType.Tcp);
-  
-  server.Bind(EP);
- 
-```
-当服务端收到客户端连接后，需要新建一个Socket来处理远端消息
-``` obj-c
-  //应该放在服务端：
-  Socket client = server.Accept();
-```
 
 ##二、各协议的区别
 
@@ -138,40 +107,86 @@ iOS官方给出的使用时CFSocket，它是基于BSD Socket进行抽象和封�
 
 你可以利用 CFSocketCreate 功能从头开始创建一个 CFSocket 对象，或者利用 CFSocketCreateWithNative 函数从 BSD socket 创建。然后，需要利用函数 CFSocketCreateRunLoopSource 创建一个“运行循环”源，并利用函数CFRunLoopAddSource 把它加入一个“运行循环”。这样不论 CFSocket 对象是否接收到信息， CFSocket 回调函数都可以运行。
 
-1.创建CFSocketdui'xiang
+好了，废话少说，进入正题。
+
+###客户端
+
+客户端创建Socket相对简单不少，步骤如下：
+
+1.创建CFSocket对象
 ```obj-c
      CFSocketRef SocketRef = CFSocketCreate
     (
-      //内存分配类型，一般为默认的Allocator
+      //内存分配类型，一般为默认的Allocator->kCFAllocatorDefault
      <#CFAllocatorRef allocator#>,
       //协议族,一般为Ipv4:PF_INET,(Ipv6,PF_INET6)
      <#SInt32 protocolFamily#>,
-     //套接字类型，TCP用流式，UDP用报文式
+     //套接字类型，TCP用流式—>SOCK_STREAM，UDP用报文式->SOCK_DGRAM
      <#SInt32 socketType#>,
      //套接字协议，如果之前用的是流式套接字类型：PPROTO_TCP，如果是报文式：IPPROTO_UDP
      <#SInt32 protocol#>,
-     //回调事件触发类型 
+     //回调事件触发类型 *1
      <#CFOptionFlags callBackTypes#>,
-     //触发时候调用的方法
+     //触发时候调用的方法 *2
      <#CFSocketCallBack callout#>,
-     //用户定义的数据指针，用于配置CFSocket对象的行为或者定义
+     //用户定义的数据指针，用于对CFSocket对象的额外定义或者申明，可以为NULL
      <#const CFSocketContext *context#>
      );
-     
-具体的回调事件触发类型
+  
+*1 具体的回调事件触发类型
 enum CFSocketCallBackType {
    kCFSocketNoCallBack = 0,
    kCFSocketReadCallBack = 1,
-   kCFSocketAcceptCallBack = 2,
+   kCFSocketAcceptCallBack = 2,（常用）
    kCFSocketDataCallBack = 3,
    kCFSocketConnectCallBack = 4,
    kCFSocketWriteCallBack = 8
 };
 typedef enum CFSocketCallBackType CFSocketCallBackType;
      
-具体的触发调用的方法
-CFSocketCallBack
-当确定的某个活动类型发生在CFSocket对象上，就会触发回调；这里触发回调的类型就是上面的具体的类型
+*2具体的触发调用的方法
+CFSocketCallBack  在CFsocket对象中某个活跃类型被触发时候调用的触发函数
 官方的申明是：typedef void (*CFSocketCallBack) ( CFSocketRef s, CFSocketCallBackType callbackType, CFDataRef address, const void *data, void *info );也就是新建的这个方法要包含这些参数
+/*!
+ *  @brief socket回调函数
+ *
+ *  @param s            socket对象；
+ *  @param callbackType 这个socket对象的活动类型；
+ *  @param address      socket对象连接的远程地址，CFData对象对应的是socket对象中的protocol family（struct sockaddr_in 或者 struct sockaddr_in6）， 除了type类型为kCFSocketAcceptCallBack和kCFSocketDataCallBack，否则这个值通常是NULL；
+ *  @param data         跟回调类型相关的数据指针
+    kCFSocketConnectCallBack：如果失败了，它指向的就是SINT32的错误代码；
+    kCFSocketAcceptCallBack： 它指向的就是CFSocketNativeHandle
+    kCFSocketDataCallBack：   它指向的就是将要进来的Data；
+    其他情况都是NULL
+ *  @param info         与Socket相关的自定义的任意数据
+ */
+
 ```
+2.创建Socket需要连接的地址，这是一个结构体，需要包含几个参数，同事IPV4和IPV6不一样
+
+``` c
+
+  // ----创建sockadd_in的结构体，该结构体作为socket的地址，IPV6需要改参数
+  struct sockaddr_in addr;
+  
+  //创建完结构体先把这个结构体进行清零操作
+  //memset：将addr中所有字节用0替换并返回addr，作用是一段内存块中填充某个给定的值，它是对较大的结构体或数组进行清零操作的一种最快方法
+  memset(&addr, 0, sizeof(addr));
+
+ /* 设置addr的具体内容
+  struct sockaddr_in {
+  __uint8_t	sin_len; 长度
+  sa_family_t	sin_family;  协议族，用AF_INET->互联网络，TCP，UDP等等
+  in_port_t	sin_port;    端口号（使用网络字节顺序) htons：将主机的无符号短整形数转换成网络字节顺序
+  struct	in_addr sin_addr; 存储IP地址，使用inet_addr()这个函数，用来将一个点分十进制的IP转换成一个长整数型数（u_long类型），若字符串有效则将字符串转换为32位二进制网络字节序的IPV4地址，否则为INADDR_NONE
+  char		sin_zero[8]; 让sockaddr与sockaddr_in两个数据结构保持大小相同而保留的空字节，无需处理
+         };*/
+  addr.sin_len = sizeof(addr);
+  addr.sin_family = AF_INET;
+  addr.sin_port = htons(19992);
+  addr.sin_addr.s_addr = inet_addr(192.168.1.333);
+
+```
+3.把地址转换成CFDataRef
+
 
