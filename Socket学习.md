@@ -195,8 +195,41 @@ CFSocketCallBack  在CFsocket对象中某个活跃类型被触发时候调用的
 ```
 4.连接
 ``` obj-c
+  /*!
+   *  @brief 连接socket
+   *
+   *  @param s       连接的socket
+   *  @param address 连接的socket的包含的地址参数
+   *  @param timeout 连接超时时间，如果为负，则不尝试连接，而是把连接放在后台进行，如果_socket消息类型为kCFSocketConnectCallBack，将会在连接成功或失败的时候在后台触发回调函数
+   *
+   *  @return        返回CFSocketError类型
+
+  CFSocketConnectToAddress(CFSocketRef s, CFDataRef address, CFTimeInterval timeout)
+  */
+      
   CFSocketError result = CFSocketConnectToAddress(_socketRef, dataRef, 5);
+  
+  /*
+  typedef CF_ENUM(CFIndex, CFSocketError) {
+    kCFSocketSuccess = 0,成功
+    kCFSocketError = -1L,失败
+    kCFSocketTimeout = -2L 超时
+};
+*/
 
 ```
 
+5.读取数据
+
+``` obj-c
+
+  if (result == kCFSocketSuccess) {
+
+        // ----另外一个线程读取数据
+        dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+            [self readStreamData];
+        });
+    }
+       
+```
 
