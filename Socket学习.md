@@ -304,7 +304,7 @@ void ServerConnectCallBack ( CFSocketRef s, CFSocketCallBackType callbackType, C
   // ----判断是不是NULL
   if (data != NULL) {
       printf("连接失败\n");
-      [vc performSelectorInBackground:@selector(releaseSocket) withObject:nil];
+      [vc performSelector:@selector(releaseSocket) withObject:nil];
   }else {
       printf("连接成功\n");
       [vc performSelectorInBackground:@selector(readStreamData) withObject:nil];
