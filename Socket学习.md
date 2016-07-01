@@ -307,7 +307,6 @@ void ServerConnectCallBack ( CFSocketRef s, CFSocketCallBackType callbackType, C
 6.读取数据
 
 ``` obj-c
-
 - (void)readStreamData
 {
   // ----定义一个字符型变量
