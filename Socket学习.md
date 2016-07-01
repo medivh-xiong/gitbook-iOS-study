@@ -333,10 +333,8 @@ void ServerConnectCallBack ( CFSocketRef s, CFSocketCallBackType callbackType, C
     NSString *content = [[NSString alloc] initWithBytes:buffer length:readData encoding:NSUTF8StringEncoding];
 
     dispatch_async(dispatch_get_main_queue(), ^{
-
     self.infoLabel.text = [NSString stringWithFormat:@"%@\n%@",content,self.infoLabel.text];
-
-  });
+    });
   }
 }
 ```
