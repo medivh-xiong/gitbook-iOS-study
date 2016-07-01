@@ -46,6 +46,8 @@ Socket本身就是对TCP的封装，就要先明白TCP连接：
 
 ![](tcp-三次握手.png)
 
+
+
 首先了解一下几个标志，SYN（synchronous），同步标志，ACK (Acknowledgement），即确认标志，seq应该是Sequence Number，序列号的意思，另外还有四次握手的fin，应该是final，表示结束标志。
 
 简单的用英语来表示就是：
@@ -55,6 +57,8 @@ Socket本身就是对TCP的封装，就要先明白TCP连接：
 服务端：fine，thank you,and you？
 
 客户端：i am fine too.
+
+
 
 1. 客户端发送一个TCP的SYN标志位置1的包指明客户打算连接的服务器的端口，以及初始序号X,保存在包头的序列号(Sequence Number)字段里。
 2. 服务器发回确认包(ACK)应答。即SYN标志位和ACK标志位均为1同时，将确认序号(Acknowledgement Number)设置为客户的序列号加1以，即X+1。
