@@ -281,8 +281,7 @@ CFSocketCallBack  在CFsocket对象中某个活跃类型被触发时候调用的
         dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
             [self readStreamData];
         });
-    }
-       
+    }    
 ```
 
 如果方案二：
