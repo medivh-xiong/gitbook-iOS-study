@@ -268,9 +268,6 @@ CFSocketCallBack  在CFsocket对象中某个活跃类型被触发时候调用的
                      );
 
   CFRelease(sourceRef);
-
-
-
 ```
 
 5.连接成功和失败的判断
