@@ -340,15 +340,17 @@ void ServerConnectCallBack ( CFSocketRef s, CFSocketCallBackType callbackType, C
    （4）第四个参数一般置0。
 
    */
-  while(recv(CFSocketGetNative(_socketRef),buffer,sizeof(buffer),0)) {
+  int readData;
+  //如果Socket错误，返回-1
+  while((readData = recv(CFSocketGetNative(_socketRef), buffer, sizeof(buffer), 0))) {
 
-      NSString *content = [[NSString alloc] initWithCString:(const char*)buffer
-                                                   encoding:NSUTF8StringEncoding];
-      dispatch_async(dispatch_get_main_queue(), ^{
+    NSString *content = [[NSString alloc] initWithBytes:buffer length:readData encoding:NSUTF8StringEncoding];
 
-           self.infoLabel.text = [NSString stringWithFormat:@"%@\n%@",content,self.infoLabel.text];
+    dispatch_async(dispatch_get_main_queue(), ^{
 
-      });
+    self.infoLabel.text = [NSString stringWithFormat:@"%@\n%@",content,self.infoLabel.text];
+
+  });
   }
 
 }
