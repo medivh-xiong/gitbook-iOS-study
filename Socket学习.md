@@ -275,7 +275,6 @@ CFSocketCallBack  在CFsocket对象中某个活跃类型被触发时候调用的
 如果方案一：
 
 ``` obj-c
-
   if (result == kCFSocketSuccess) {
 
         // ----另外一个线程读取数据
