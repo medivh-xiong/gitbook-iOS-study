@@ -287,7 +287,6 @@ CFSocketCallBack  在CFsocket对象中某个活跃类型被触发时候调用的
 如果方案二：
 
 ``` obj-c
-
 void ServerConnectCallBack ( CFSocketRef s, CFSocketCallBackType callbackType, CFDataRef address, const void *data, void *info )
 {
   // ----判断是不是NULL
@@ -303,7 +302,6 @@ void ServerConnectCallBack ( CFSocketRef s, CFSocketCallBackType callbackType, C
 
   }
 }
-
 ```
 
 6.读取数据
