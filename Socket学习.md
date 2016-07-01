@@ -189,7 +189,6 @@ CFSocketCallBack  在CFsocket对象中某个活跃类型被触发时候调用的
 2.创建Socket需要连接的地址，这是一个结构体，需要包含几个参数，同事IPV4和IPV6不一样
 
 ``` c
-
   // ----创建sockadd_in的结构体，该结构体作为socket的地址，IPV6需要改参数
   struct sockaddr_in addr;
   
@@ -210,7 +209,6 @@ CFSocketCallBack  在CFsocket对象中某个活跃类型被触发时候调用的
   addr.sin_family = AF_INET;
   addr.sin_port = htons(19992);
   addr.sin_addr.s_addr = inet_addr(192.168.1.333);
-
 ```
 3.把地址转换成CFDataRef
 ``` obj-c
