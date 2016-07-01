@@ -111,6 +111,8 @@ iOS官方给出的使用时CFSocket，它是基于BSD Socket进行抽象和封�
 
 你可以利用 CFSocketCreate 功能从头开始创建一个 CFSocket 对象，或者利用 CFSocketCreateWithNative 函数从 BSD socket 创建。然后，需要利用函数 CFSocketCreateRunLoopSource 创建一个“运行循环”源，并利用函数CFRunLoopAddSource 把它加入一个“运行循环”。这样不论 CFSocket 对象是否接收到信息， CFSocket 回调函数都可以运行。
 
+---
+
 好了，废话少说，进入正题。
 
 ###客户端
