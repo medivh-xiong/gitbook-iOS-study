@@ -121,7 +121,7 @@ iOS官方给出的使用时CFSocket，它是基于BSD Socket进行抽象和封�
 
 客户端创建Socket相对简单不少，步骤如下：
 
-(可选)创建CFSocketContext->用来关联Socket上下文信息
+0.(可选)创建CFSocketContext->用来关联Socket上下文信息
 
 ``` obj-c
   /*
