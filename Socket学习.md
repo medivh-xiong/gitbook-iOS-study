@@ -317,3 +317,42 @@ void ServerConnectCallBack ( CFSocketRef s, CFSocketCallBackType callbackType, C
 
 ```
 
+6.读取数据
+
+``` obj-c
+
+- (void)readStreamData
+{
+  // ----定义一个字符型变量
+  char buffer[512];
+
+  /** 
+      int recv( SOCKET s, char FAR *buf, int len, int flags );
+
+   不论是客户还是服务器应用程序都用recv函数从TCP连接的另一端接收数据。
+
+   （1）第一个参数指定接收端套接字描述符；
+
+   （2）第二个参数指明一个缓冲区，该缓冲区用来存放recv函数接收到的数据；
+
+   （3）第三个参数指明buf的长度；
+
+   （4）第四个参数一般置0。
+
+   */
+  while(recv(CFSocketGetNative(_socketRef),buffer,sizeof(buffer),0)) {
+
+      NSString *content = [[NSString alloc] initWithCString:(const char*)buffer
+                                                   encoding:NSUTF8StringEncoding];
+      dispatch_async(dispatch_get_main_queue(), ^{
+
+           self.infoLabel.text = [NSString stringWithFormat:@"%@\n%@",content,self.infoLabel.text];
+
+      });
+  }
+
+}
+
+```
+
+客户端的下载地址：
