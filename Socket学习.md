@@ -242,7 +242,6 @@ CFSocketCallBack  在CFsocket对象中某个活跃类型被触发时候调用的
     kCFSocketTimeout = -2L 超时
 };
 */
-
 ```
 
 方案二：
@@ -251,7 +250,6 @@ CFSocketCallBack  在CFsocket对象中某个活跃类型被触发时候调用的
 
 
 ``` obj-c
-
   // ----连接
   CFSocketConnectToAddress(_socketRef, dataRef, -1);
 
