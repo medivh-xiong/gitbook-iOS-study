@@ -116,25 +116,23 @@ iOS官方给出的使用时CFSocket，它是基于BSD Socket进行抽象和封�
 (可选)创建CFSocketContext->用来关联Socket上下文信息
 
 ``` obj-c
- //1.先创建Socket关联的上下文信息
-        /*
-        struct CFSocketContext
-        {
-            CFIndex version; 版本号，必须为0
-            void *info; 一个指向任意程序定义数据的指针，可以在CFScocket对象刚创建的时候与之关联，被传递给所有在上下文中回调；
-            CFAllocatorRetainCallBack retain; info指针中的retain回调，可以为NULL
-            CFAllocatorReleaseCallBack release; info指针中的release的回调，可以为NULL
-            CFAllocatorCopyDescriptionCallBack copyDescription; info指针中的回调描述，可以为NULL
-        };
-        typedef struct CFSocketContext CFSocketContext;
-        */
-        CFSocketContext sockContext = {0,(__bridge void *)(self),NULL,NULL,NULL};
+  /*
+  struct CFSocketContext
+  {
+      CFIndex version; 版本号，必须为0
+      void *info; 一个指向任意程序定义数据的指针，可以在CFScocket对象刚创建的时候与之关联，被传递给所有在上下文中回调；
+      CFAllocatorRetainCallBack retain; info指针中的retain回调，可以为NULL
+      CFAllocatorReleaseCallBack release; info指针中的release的回调，可以为NULL
+      CFAllocatorCopyDescriptionCallBack copyDescription; info指针中的回调描述，可以为NULL
+  };
+  typedef struct CFSocketContext CFSocketContext;
+  */
+ 
+实现代码：
+  //这里把self作为数据指针传过去，这样在回调的时候就能拿到当前的VC
+  CFSocketContext sockContext = {0,(__bridge void *)(self),NULL,NULL,NULL};
 
 ```
-
-
-
-
 
 1.创建CFSocket对象
 ```obj-c
@@ -184,6 +182,9 @@ CFSocketCallBack  在CFsocket对象中某个活跃类型被触发时候调用的
  *  @param info         与Socket相关的自定义的任意数据
  */
 
+实现代码：
+  _socketRef = CFSocketCreate(kCFAllocatorDefault, PF_INET, SOCK_STREAM, IPPROTO_TCP, kCFSocketConnectCallBack,ServerConnectCallBack, &sockContext);
+
 ```
 2.创建Socket需要连接的地址，这是一个结构体，需要包含几个参数，同事IPV4和IPV6不一样
 
@@ -204,6 +205,7 @@ CFSocketCallBack  在CFsocket对象中某个活跃类型被触发时候调用的
   struct	in_addr sin_addr; 存储IP地址，使用inet_addr()这个函数，用来将一个点分十进制的IP转换成一个长整数型数（u_long类型），若字符串有效则将字符串转换为32位二进制网络字节序的IPV4地址，否则为INADDR_NONE
   char		sin_zero[8]; 让sockaddr与sockaddr_in两个数据结构保持大小相同而保留的空字节，无需处理
          };*/
+
   addr.sin_len = sizeof(addr);
   addr.sin_family = AF_INET;
   addr.sin_port = htons(19992);
@@ -217,6 +219,10 @@ CFSocketCallBack  在CFsocket对象中某个活跃类型被触发时候调用的
 
 ```
 4.连接
+  这里连接有2种方案：
+  * 方案一：
+ 
+ 如果上面SocketRef创建爱你时候选择回调类型为kCFSocketNoCallBack，然后没有设置回调函数，那就直接进行连接
 ``` obj-c
   /*!
    *  @brief 连接socket
