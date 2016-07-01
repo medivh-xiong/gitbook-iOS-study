@@ -297,16 +297,17 @@ CFSocketCallBack  在CFsocket对象中某个活跃类型被触发时候调用的
 ``` obj-c
 void ServerConnectCallBack ( CFSocketRef s, CFSocketCallBackType callbackType, CFDataRef address, const void *data, void *info )
 {
+  //这里是当前控制器名字，从info中取得之前存储的控制器，然后在后台执行刷新数据方法
   ViewController *vc = (__bridge ViewController *)(info);
+  ViewController *vc = (__bridge ViewController *)(info);
+  
   // ----判断是不是NULL
   if (data != NULL) {
       printf("连接失败\n");
       [vc performSelectorInBackground:@selector(releaseSocket) withObject:nil];
-
   }else {
       printf("连接成功\n");
       [vc performSelectorInBackground:@selector(readStreamData) withObject:nil];
-
   }
 }
 ```
