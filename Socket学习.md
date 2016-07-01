@@ -34,7 +34,8 @@ TCP/IP是传输层协议，主要解决数据如何在网络中传输；而HTTP�
   
   Socket实际上就是对TCP/IP协议的封装，本身并不是协议，而是调用一个接口（API），通过Socket，我们才能使用TCP/IP协议；
 
-**HTTP和Socket连接的区别**
+
+###HTTP和Socket连接的区别
 
 1.**TCP连接**
 
