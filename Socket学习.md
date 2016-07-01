@@ -334,17 +334,35 @@ void ServerConnectCallBack ( CFSocketRef s, CFSocketCallBackType callbackType, C
    （4）第四个参数一般置0。
 
    */
-  int readData;
-  //如果Socket错误，返回-1
+
+  long readData;
+  //若无错误发生，recv()返回读入的字节数。如果连接已中止，返回0。如果发生错误，返回-1，应用程序可通过perror()获取相应错误信息
   while((readData = recv(CFSocketGetNative(_socketRef), buffer, sizeof(buffer), 0))) {
 
-    NSString *content = [[NSString alloc] initWithBytes:buffer length:readData encoding:NSUTF8StringEncoding];
+      NSString *content = [[NSString alloc] initWithBytes:buffer length:readData encoding:NSUTF8StringEncoding];
 
-    dispatch_async(dispatch_get_main_queue(), ^{
-      self.infoLabel.text = [NSString stringWithFormat:@"%@\n%@",content,self.infoLabel.text];
-    });
+      dispatch_async(dispatch_get_main_queue(), ^{
+
+           self.infoLabel.text = [NSString stringWithFormat:@"%@\n%@",content,self.infoLabel.text];
+
+      });
   }
+  perror("recv");
 }
 ```
 
-客户端的下载地址：
+7.向服务端上传数据
+
+``` obj-c
+  NSString *stringTosend = [NSString stringWithFormat:@"%@说：%@",self.nameText.text,self.messageText.text];
+
+  const char* data = [stringTosend UTF8String];
+
+  /** 成功则返回实际传送出去的字符数, 失败返回-1. 错误原因存于errno*/
+  int sendData = send(CFSocketGetNative(_socketRef), data, strlen(data) + 1, 0);
+
+  if (sendData < 0) {
+      perror("send");
+  }
+```
+
