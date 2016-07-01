@@ -214,9 +214,7 @@ CFSocketCallBack  在CFsocket对象中某个活跃类型被触发时候调用的
 ```
 3.把地址转换成CFDataRef
 ``` obj-c
-
   CFDataRef dataRef = CFDataCreate(kCFAllocatorDefault,(UInt8 *)&addr, sizeof(addr));
-
 ```
 4.连接
   这里连接有2种方案：
