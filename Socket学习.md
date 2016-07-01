@@ -113,6 +113,29 @@ iOS官方给出的使用时CFSocket，它是基于BSD Socket进行抽象和封�
 
 客户端创建Socket相对简单不少，步骤如下：
 
+(可选)创建CFSocketContext->用来关联Socket上下文信息
+
+``` obj-c
+ //1.先创建Socket关联的上下文信息
+        /*
+        struct CFSocketContext
+        {
+            CFIndex version; 版本号，必须为0
+            void *info; 一个指向任意程序定义数据的指针，可以在CFScocket对象刚创建的时候与之关联，被传递给所有在上下文中回调；
+            CFAllocatorRetainCallBack retain; info指针中的retain回调，可以为NULL
+            CFAllocatorReleaseCallBack release; info指针中的release的回调，可以为NULL
+            CFAllocatorCopyDescriptionCallBack copyDescription; info指针中的回调描述，可以为NULL
+        };
+        typedef struct CFSocketContext CFSocketContext;
+        */
+        CFSocketContext sockContext = {0,(__bridge void *)(self),NULL,NULL,NULL};
+
+```
+
+
+
+
+
 1.创建CFSocket对象
 ```obj-c
      CFSocketRef SocketRef = CFSocketCreate
