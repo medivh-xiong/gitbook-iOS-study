@@ -222,6 +222,7 @@ CFSocketCallBack  在CFsocket对象中某个活跃类型被触发时候调用的
   这里连接有2种方案：
   * 方案一：
  
+ 
  如果上面SocketRef创建爱你时候选择回调类型为kCFSocketNoCallBack，然后没有设置回调函数，那就直接进行连接
 ``` obj-c
   /*!
@@ -248,7 +249,39 @@ CFSocketCallBack  在CFsocket对象中某个活跃类型被触发时候调用的
 
 ```
 
-5.读取数据
+方案二：
+
+如果设置回调参数为kCFSocketConnectCallBack，并且设置了回调函数
+
+
+``` obj-c
+
+  // ----连接
+  CFSocketConnectToAddress(_socketRef, dataRef, -1);
+
+  // ----加入循环中
+
+  // ----获取当前线程的RunLoop
+  CFRunLoopRef runLoopRef = CFRunLoopGetCurrent();
+
+  // ----把Socket包装成CFRunLoopSource，最后一个参数是指有多个runloopsource通过同一个runloop时候顺序，如果只有一个source通常为0
+  CFRunLoopSourceRef sourceRef = CFSocketCreateRunLoopSource(kCFAllocatorDefault, _socketRef, 0);
+
+  // ----加入运行循环,第三个参数表示
+  CFRunLoopAddSource(runLoopRef, //运行循环管
+                     sourceRef, // 增加的运行循环源, 它会被retain一次
+                     kCFRunLoopCommonModes //用什么模式把source加入到run loop里面,使用kCFRunLoopCommonModes可以监视所有通常模式添加source
+                     );
+
+  CFRelease(sourceRef);
+
+
+
+```
+
+5.连接成功和失败的判断
+
+如果方案一：
 
 ``` obj-c
 
@@ -260,5 +293,27 @@ CFSocketCallBack  在CFsocket对象中某个活跃类型被触发时候调用的
         });
     }
        
+```
+
+如果方案二：
+
+``` obj-c
+
+void ServerConnectCallBack ( CFSocketRef s, CFSocketCallBackType callbackType, CFDataRef address, const void *data, void *info )
+{
+  // ----判断是不是NULL
+  if (data != NULL) {
+      printf("连接失败\n");
+
+  }else {
+      printf("连接成功\n");
+
+      //这里是当前控制器名字，从info中取得之前存储的控制器，然后在后台执行刷新数据方法
+      ViewController *vc = (__bridge ViewController *)(info);
+      [vc performSelectorInBackground:@selector(readStreamData) withObject:nil];
+
+  }
+}
+
 ```
 
