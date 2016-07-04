@@ -365,7 +365,213 @@ void ServerConnectCallBack ( CFSocketRef s, CFSocketCallBackType callbackType, C
       perror("send");
   }
 ```
-未完待续。。。
+
+
+
+### 服务端
+
+服务端创建Socket相对复杂一下；
+
+1. 创建Socket对象
+``` obj-c
+  //同客户端，注释就不写了
+  CFSocketRef _socket = CFSocketCreate(kCFAllocatorDefault,
+                                           PF_INET,
+                                           SOCK_STREAM,
+                                           IPPROTO_TCP ,
+                                           kCFSocketAcceptCallBack,
+                                           TCPServerAcceptCallBack,
+                                           NULL);
+
+  if (_socket == NULL) {
+    NSLog(@"创建Socket失败！");
+    return;
+  }
+```
+
+2. 设置允许重用本地地址和端口
+  这里首先介绍下setsockopt()这个函数，它是用来设置Socket关联的选项,选项可能存在于多层协议中，它们总会出现在最上面的套接字层。当操作套接字选项时，选项位于的层和选项的名称必须给出。为了操作套接字层的选项，应该 将层的值指定为SOL_SOCKET。为了操作其它层的选项，控制选项的合适协议号必须给出。
+  
+``` c
+int setsockopt(int sock,  //需要设置选项的套接字
+               int level, //选项所在的协议层
+               int optname, //需要访问的选项名
+               const void *optval, //新选项值的缓冲
+               socklen_t optlen //现选项的长度
+               );
+               
+/* 成功返回0，失败返回-1。
+失败的errno：
+EBADF：sock不是有效的文件描述词
+EFAULT：optval指向的内存并非有效的进程空间
+EINVAL：在调用setsockopt()时，optlen无效
+ENOPROTOOPT：指定的协议层不能识别选项
+ENOTSOCK：sock描述的不是套接字
+*/
+
+/*
+参数的详细说明
+1. level指定控制套接字的层次.可以取三种值:
+1)SOL_SOCKET:通用套接字选项.（常用）
+2)IPPROTO_IP:IP选项.
+3)IPPROTO_TCP:TCP选项.　
+
+2. optname指定控制的方式(选项的名称)
+ SO_REUSERADDR- 允许重用本地地址和端口- int
+3.optval设置套接字选项.根据选项名称的数据类型进行转换，这里是int类型，我把它用BOOL来代替，1表示YES,0表示NO；
+4. optlen 是指上面optval长度
+*/
+```
+具体的代码：
+``` obj-c
+  BOOL reused = YES;
+  //设置允许重用本地地址和端口
+  setsockopt(CFSocketGetNative(_socket), SOL_SOCKET, SO_REUSEADDR, (const void *)&reused, sizeof(reused));
+```
+
+3.创建Socket需要连接的地址
+
+``` obj-c
+  //定义sockaddr_in类型的变量，该变量将作为CFSocket的地址
+  struct sockaddr_in Socketaddr;
+  memset(&Socketaddr, 0, sizeof(Socketaddr));
+  Socketaddr.sin_len = sizeof(Socketaddr);
+  Socketaddr.sin_family = AF_INET;
+  //设置该服务器监听本机任意可用的IP地址
+  //                addr4.sin_addr.s_addr = htonl(INADDR_ANY);
+  //设置服务器监听地址
+  Socketaddr.sin_addr.s_addr = inet_addr(TEST_IP_ADDR);
+  //设置服务器监听端口
+  Socketaddr.sin_port = htons(TEST_IP_PROT);
+```
+
+4.转换地址类型，连接
+
+``` obj-c
+  //将IPv4的地址转换为CFDataRef
+  CFDataRef address = CFDataCreate(kCFAllocatorDefault, (UInt8 *)&Socketaddr, sizeof(Socketaddr));
+  
+  //将CFSocket绑定到指定IP地址
+  if (CFSocketSetAddress(_socket, address) != kCFSocketSuccess) {
+      //如果_socket不为NULL，则释放_socket
+      if (_socket) {
+          CFRelease(_socket);
+          exit(1);
+      }
+      _socket = NULL;
+  }
+```
+
+5.加入RunLoop循环监听
+```obj-c
+  NSLog(@"----启动循环监听客户端连接---");
+  //获取当前线程的CFRunLoop
+  CFRunLoopRef cfRunLoop = CFRunLoopGetCurrent();
+  //将_socket包装成CFRunLoopSource
+  CFRunLoopSourceRef source = CFSocketCreateRunLoopSource(kCFAllocatorDefault, _socket, 0);
+  //为CFRunLoop对象添加source
+  CFRunLoopAddSource(cfRunLoop, source, kCFRunLoopCommonModes);
+  CFRelease(source);
+  //运行当前线程的CFRunLoop
+  CFRunLoopRun();
+```
+
+6.回调函数
+``` c
+//有客户端连接进来的回调函数
+void TCPServerAcceptCallBack(CFSocketRef socket,
+                             CFSocketCallBackType type,
+                             CFDataRef address,
+                             const void *data,
+                             void *info)
+{
+    //如果有客户端Socket连接进来
+    if (kCFSocketAcceptCallBack == type) {
+        
+        //获取本地Socket的Handle，这个回调事件的类型是kCFSocketAcceptCallBack，这个data就是一个CFSocketNativeHandle类型指针
+        CFSocketNativeHandle nativeSocketHandle = *(CFSocketNativeHandle *)data;
+        
+        //定义一个255数组接收这个新的data转成的socket的地址，SOCK_MAXADDRLEN意思是最长的可能的地址
+        uint8_t name[SOCK_MAXADDRLEN];
+        //这个地址数组的长度
+        socklen_t namelen = sizeof(name);
+        
+        
+        /**
+            int	getpeername(int,已经连接的Socket
+                            struct sockaddr * __restrict,用来接收地址信息
+                            socklen_t * __restrict 地址长度
+                            )
+         作用是从已经连接的Socket中获得地址信息，存到参数2中，地址长度放到参数3中
+         
+         成功是返回0，如果失败了则返回别的数字，对应不同错误码
+         
+         */
+        //获取Socket信息
+        if (getpeername(nativeSocketHandle,
+                        (struct sockaddr *)name,
+                        &namelen) != 0 ) {
+            
+            perror("getpeername:");
+            exit(1);
+        }
+        
+        //获取连接信息
+        struct sockaddr_in *addr_in = (struct sockaddr_in *)name;
+        // ----inet_ntoa将网络地址转换成“.”点隔的字符串格式
+        NSLog(@"%s:%d连接进来了",inet_ntoa(addr_in->sin_addr),addr_in->sin_port);
+        
+        //创建一组可读/写的CFStream
+        CFReadStreamRef  readStreamRef  = NULL;
+        CFWriteStreamRef writeStreamRef = NULL;
+        
+        // ----创建一个和Socket对象相关联的读取数据流
+        CFStreamCreatePairWithSocket(kCFAllocatorDefault, //内存分配器
+                                     nativeSocketHandle, //准备使用输入输出流的socket
+                                     &readStreamRef, //输入流
+                                     &writeStreamRef);//输出流
+        
+        // ----CFStreamCreatePairWithSocket(）操作成功后，readStreamRef和writeStreamRef都指向有效的地址，因此判断是不是还是之前设置的NULL就可以了
+        if (readStreamRef && writeStreamRef) {
+            
+            //打开输入流和输出流
+            CFReadStreamOpen(readStreamRef);
+            CFWriteStreamOpen(writeStreamRef);
+            
+            CFStreamClientContext context = {0,NULL,NULL,NULL};
+            
+            if (!CFReadStreamSetClient(readStreamRef,
+                                       kCFStreamEventHasBytesAvailable,
+                                       readStream,/*回调函数，当有可读的数据时调用*/
+                                       &context)) {
+                
+                exit(1);
+                
+            }
+            
+            CFReadStreamScheduleWithRunLoop(readStreamRef,
+                                            CFRunLoopGetCurrent(),
+                                            kCFRunLoopCommonModes);
+            
+            const char *str = "OK！你收到了Mac服务器的消息！\n";
+            
+            //向客户端输出数据
+            CFWriteStreamWrite(writeStreamRef, (UInt8 *)str, strlen(str) + 1);
+        }else {
+            // ----如果失败就销毁已经连接的Socket
+            close(nativeSocketHandle);
+        }
+        
+        // ----对流的内容进行清空操作，防止在使用它们的时候，里面有我们不需要的垃圾数据。
+        if (readStreamRef) CFRelease(readStreamRef);
+        if (readStreamRef) CFRelease(readStreamRef);    
+    } 
+}
+```
+
+
+
+
 
 源码地址:https://github.com/medivh-xiong/CFSocket_Demo.git
 
