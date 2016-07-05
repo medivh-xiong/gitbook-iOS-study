@@ -496,7 +496,6 @@ void TCPServerAcceptCallBack(CFSocketRef socket,
         //这个地址数组的长度
         socklen_t namelen = sizeof(name);
         
-        
         /**
             int	getpeername(int,已经连接的Socket
                             struct sockaddr * __restrict,用来接收地址信息
@@ -522,8 +521,8 @@ void TCPServerAcceptCallBack(CFSocketRef socket,
         NSLog(@"%s:%d连接进来了",inet_ntoa(addr_in->sin_addr),addr_in->sin_port);
         
         //创建一组可读/写的CFStream
-        CFReadStreamRef  readStreamRef  = NULL;
-        CFWriteStreamRef writeStreamRef = NULL;
+        readStreamRef  = NULL;
+        writeStreamRef = NULL;
         
         // ----创建一个和Socket对象相关联的读取数据流
         CFStreamCreatePairWithSocket(kCFAllocatorDefault, //内存分配器
@@ -538,40 +537,69 @@ void TCPServerAcceptCallBack(CFSocketRef socket,
             CFReadStreamOpen(readStreamRef);
             CFWriteStreamOpen(writeStreamRef);
             
-            CFStreamClientContext context = {0,NULL,NULL,NULL};
+            // ----一个结构体包含程序定义数据和回调用来配置客户端数据流行为
+            NSString *aaa = @"earth，wind，fire，be my call";
             
+            CFStreamClientContext context = {0,(__bridge void *)(aaa),NULL,NULL};
+            
+            /** 
+             指定客户端的数据流，当特定事件发生的时候，接受回调
+             Boolean CFReadStreamSetClient ( CFReadStreamRef stream, 需要指定的数据流
+                                             CFOptionFlags streamEvents, 具体的事件，如果为NULL，当前客户端数据流就会被移除
+                                             CFReadStreamClientCallBack clientCB, 事件发生回调函数，如果为NULL，同上
+                                             CFStreamClientContext *clientContext 一个为客户端数据流保存上下文信息的结构体，为NULL同上
+                                            );
+             返回值为TRUE就是数据流支持异步通知，FALSE就是不支持
+             */
             if (!CFReadStreamSetClient(readStreamRef,
                                        kCFStreamEventHasBytesAvailable,
-                                       readStream,/*回调函数，当有可读的数据时调用*/
+                                       readStream,
                                        &context)) {
-                
                 exit(1);
-                
             }
             
+            // ----将数据流加入循环
             CFReadStreamScheduleWithRunLoop(readStreamRef,
                                             CFRunLoopGetCurrent(),
                                             kCFRunLoopCommonModes);
             
-            const char *str = "OK！你收到了Mac服务器的消息！\n";
+            const char *str = "welcome！\n";
             
             //向客户端输出数据
             CFWriteStreamWrite(writeStreamRef, (UInt8 *)str, strlen(str) + 1);
+            
         }else {
             // ----如果失败就销毁已经连接的Socket
             close(nativeSocketHandle);
-        }
-        
-        // ----对流的内容进行清空操作，防止在使用它们的时候，里面有我们不需要的垃圾数据。
-        if (readStreamRef) CFRelease(readStreamRef);
-        if (readStreamRef) CFRelease(readStreamRef);    
+        }   
     } 
 }
 ```
 
-
-
-
+7.读取客户端发来的数据
+``` obj-c
+void readStream(CFReadStreamRef readStream,
+                CFStreamEventType evenType,
+                void *clientCallBackInfo)
+{
+    UInt8 buff[2048];
+    
+    NSString *aaa = (__bridge NSString *)(clientCallBackInfo);
+    
+    NSLog(@"%@", aaa);
+    
+    // ----从可读的数据流中读取数据，返回值是多少字节读到的，如果为0就是已经全部结束完毕，如果是-1则是数据流没有打开或者其他错误发生
+    CFIndex hasRead = CFReadStreamRead(readStream, buff, sizeof(buff));
+    
+    if (hasRead > 0) {
+        printf("接收到数据：%s\n",buff);
+        
+        const char *str = "for the lich king！！\n";
+        //向客户端输出数据
+        CFWriteStreamWrite(writeStreamRef, (UInt8 *)str, strlen(str) + 1);
+    }
+}
+```
 
 源码地址:https://github.com/medivh-xiong/CFSocket_Demo.git
 
