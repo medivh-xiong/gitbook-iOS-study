@@ -40,7 +40,7 @@
 
 1. 启动一个Central端管理器对象；
 
-```obj-c
+```c
 self.mgr = [[CBCentralManager alloc] initWithDelegate:self queue:nil];
 ```
 
