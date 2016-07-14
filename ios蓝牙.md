@@ -50,9 +50,21 @@
 
 2. 搜索并连接正在广告的Peripheral设备
 
-```
+``` obj-c
+/** 创建Central管理器时，管理器对象会调用代理对象的centralManagerDidUpdateState:方法。我们需要实现这个方法来确保本地设备支持。*/
+- (void)centralManagerDidUpdateState:(CBCentralManager *)central
+{
+ // 在开机状态下才进行扫描外部设备
+ if (central.state == CBCentralManagerStatePoweredOn) {
+
+// 扫描外被设备的哪些服务
+// 如果第一个参数传递nil，则管理器会返回所有发现的Peripheral设备。通常我们会指定一个UUID对象的数组，来查找特定的设备
+ [self.mgr scanForPeripheralsWithServices:nil options:nil];
+ }
+}
 
 ```
+
 
 
 
