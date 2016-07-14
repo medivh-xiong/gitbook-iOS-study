@@ -48,9 +48,9 @@
  self.mgr = [[CBCentralManager alloc]initWithDelegate:self queue:nil];
 ```
 
-2. 搜索并连接正在广告的Peripheral设备
+1. 搜索并连接正在广告的Peripheral设备
 
-``` obj-c
+```obj-c
 /** 创建Central管理器时，管理器对象会调用代理对象的centralManagerDidUpdateState:方法。我们需要实现这个方法来确保本地设备支持。*/
 - (void)centralManagerDidUpdateState:(CBCentralManager *)central
 {
@@ -62,19 +62,100 @@
  [self.mgr scanForPeripheralsWithServices:nil options:nil];
  }
 }
+```
+
+在调用上述方法后，CBCentralManager对象在每次发现设备时会调用`centralManager:didDiscoverPeripheral:advertisementData:RSSI:`方法。
+
+```obj-c
+
+- (void)centralManager:(CBCentralManager *)central didDiscoverPeripheral:(CBPeripheral *)peripheral advertisementData:(NSDictionary<NSString *,id> *)advertisementData RSSI:(NSNumber *)RSSI
+{
+    NSLog(@"perhal = %@", peripheral);
+
+    // 这里是选择出我想要连接的设备
+    if ([peripheral.name isEqualToString:@"熊欣的MacBookPro"]) {
+
+     // 连接外围设备
+     [self.mgr connectPeripheral:peripheral options:nil];
+
+     }
+
+    }
+}
+
+```
+
+如果连接成功了，则会调用`centralManager:didConnectPeripheral:`方法，，同时在交互的之前先用设置外围设备的代理，以确保能接收到合适的回调
+
+
+``` obj-c
+
+- (void)centralManager:(CBCentralManager *)central didConnectPeripheral:(CBPeripheral *)peripheral
+{
+    NSLog(@"=============================================");
+
+    NSLog(@"connect = %@", peripheral);
+    
+// 连接上设备了，就停止扫描，省电
+    [self.mgr stopScan];
+
+    self.peripheral = peripheral;
+
+// 设置外围设备的代理
+    self.peripheral.delegate = self;
+
+// 传nil就是查找所有服务
+    [self.peripheral discoverServices:nil];
+
+}
+
+```
+
+3. 扫描Peripheral中的服务和特征
+
+当调用``discoverServices:``方法时候，成功搜索到服务后会触发回调方法
+
+``` obj-c
+
+/** 每个蓝牙4.0的设备都是通过服务和特征来展示自己的，一个设备必然包含一个或多个服务，每个服务下面又包含若干个特征。`*/
+- (void)peripheral:(CBPeripheral *)peripheral didDiscoverServices:(NSError *)error
+{
+    NSLog(@"services = %@", peripheral.services);
+
+ /** 遍历所有服务*/
+    for (CBService *serivce in peripheral.services) {
+
+        if ([serivce.UUID.UUIDString isEqualToString:@"Device Information"]) {
+ /** 搜索服务中的特征，传nil是为了搜索所有特征*/
+            [self.peripheral discoverCharacteristics:nil forService:serivce];
+         }
+
+     }
+}
+
+```
+当发现特定服务的特性时，peripheral对象会调用代理对象的``peripheral:didDiscoverCharacteristicsForService:error:``方法。
+
+``` obj-c
+- (void)peripheral:(CBPeripheral *)peripheral didDiscoverCharacteristicsForService:(CBService *)service error:(NSError *)error
+{
+    NSLog(@"chara = %@", service.characteristics);
+
+    for (CBCharacteristic *characteristic in service.characteristics) {
+        NSLog(@"discoverd characteristic %@", characteristic);
+// 一个特性包含一个单一的值，这个值包含了Peripheral服务的信息。在获取到特性之后，我们就可以从特性中获取这个值。只需要调用CBPeripheral实例的readValueForCharacteristic:方法即可。
+        [self.peripheral readValueForCharacteristic:characteristic];
+
+// 扫描特征里面的所有特征描述
+        [self.peripheral discoverDescriptorsForCharacteristic:characteristic];
+ }
+
+}
 
 ```
 
 
 
-
-
-
-
-
-
-
-1. 扫描Peripheral中的服务和特征；
 2. 与Peripheral做数据交互；
 3. 订阅Characteristic的通知；
 4. 断开连接
