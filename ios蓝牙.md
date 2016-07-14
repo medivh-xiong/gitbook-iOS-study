@@ -40,13 +40,30 @@
 
 1. 启动一个Central端管理器对象；
 
-``` obj-c
-self.mgr = [[CBCentralManager alloc] initWithDelegate:self queue:nil];
+```obj-c
+ /** 建立中心管家 
+ 参数1：指定当前类为代理对象，所以其需要实现CBCentralManagerDelegate协议
+ 参数2：指定的队列，如果queue为nil，则Central管理器使用主队列来发送事件
+ */
+ self.mgr = [[CBCentralManager alloc]initWithDelegate:self queue:nil];
 ```
 
-1. 搜索并连接正在广告的Peripheral设备；
-2. 扫描Peripheral中的服务和特征；
-3. 与Peripheral做数据交互；
-4. 订阅Characteristic的通知；
-5. 断开连接
+2. 搜索并连接正在广告的Peripheral设备
+
+```
+
+```
+
+
+
+
+
+
+
+
+
+1. 扫描Peripheral中的服务和特征；
+2. 与Peripheral做数据交互；
+3. 订阅Characteristic的通知；
+4. 断开连接
 
