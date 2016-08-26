@@ -1,7 +1,7 @@
 {
     "plugins": [
         "-highlight",
-        "prism",
-        "ace"
+        "ace",
+        "highlight2"
     ]
 }
